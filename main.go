@@ -236,6 +236,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
+	b = []byte(strings.ReplaceAll(string(b), "dealt=b.blast?damage:m.maxHealth*.01;", "dealt=b.blast?damage:1;"))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	_, _ = w.Write(b)
