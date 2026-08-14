@@ -68,6 +68,7 @@
    m.health-=777;
    if(bullet.boss2Special3&&bullet.owner){
     bullet.owner.health=Math.min(bullet.owner.maxHealth,bullet.owner.health+2);
+    bullet.owner.boss2FadeAlpha=1;
    }
    return finishBoss2Hit(m,bullet);
   }
