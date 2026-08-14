@@ -11,6 +11,9 @@
    if(livingPlayers().length===0)endBattle(false);
   }
  }
+ function slowPurpleSpawnActive(b){
+  return !!(b&&(b.boss2Mode==='special'||(b.boss2Mode==='orb'&&currentOrbReaction(b)===2)));
+ }
 
  function teleportOutsideAura(p,b){
   let pos=null;
@@ -35,7 +38,14 @@
 
  updateBoss2=function(b,dt){
   baseUpdateBoss2(b,dt);
-  if(!b||!b.alive||b.boss2Mode!=='orb'||currentOrbReaction(b)!==4)return;
+  if(!b||!b.alive)return;
+
+  if(slowPurpleSpawnActive(b)){
+   b.boss2SlowPurpleT=(b.boss2SlowPurpleT??5)-dt;
+   if(b.boss2SlowPurpleT<=0){spawnBoss2Purple(b);b.boss2SlowPurpleT=5;}
+  }else b.boss2SlowPurpleT=5;
+
+  if(b.boss2Mode!=='orb'||currentOrbReaction(b)!==4)return;
   for(const p of livingPlayers()){
    const active=insideAura(p,b);
    if(!active){p.boss2TeleportLatch=false;continue;}
