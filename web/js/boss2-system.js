@@ -64,8 +64,12 @@
   if(b.auraT<=0){b.auraIndex=(b.auraIndex+1)%4;b.auraT=10;b.auraPulse=0;b.auraPulseT=.9;b.purpleSpawnT=Math.min(b.purpleSpawnT||3,3);ring(b.x,b.y,b.auraColors[b.auraIndex],120);sfx('bossWarn');}
   if(b.auraPulseT>0){b.auraPulseT=Math.max(0,b.auraPulseT-dt);b.auraPulse=1-b.auraPulseT/.9;}
   b.boss2RapidT=Math.max(0,(b.boss2RapidT||0)-dt);
+  const modeActive=b.boss2Mode==='special'||b.boss2Mode==='orb';
   const noPlayerFade=b.boss2Mode==='orb'&&orbReaction(b)===2;
-  for(const p of livingPlayers()){if(noPlayerFade){p.boss2FadeAlpha=1;continue;}p.boss2FadeAlpha=clamp((p.boss2FadeAlpha??1)+(insideAura(p,b)?-dt:dt),0,1);}
+  for(const p of livingPlayers()){
+   if(!modeActive||noPlayerFade){p.boss2FadeAlpha=1;continue;}
+   p.boss2FadeAlpha=clamp((p.boss2FadeAlpha??1)+(insideAura(p,b)?-dt:dt),0,1);
+  }
   if((b.boss2ModeT||0)>0){b.boss2ModeT=Math.max(0,b.boss2ModeT-dt);if(b.boss2ModeT<=0){if(b.boss2Mode==='special'){b.boss2Mode='orb';b.boss2ModeT=10;rollOrbItem(b);}else{b.boss2Mode=null;b.boss2OrbItem=0;b.boss2OrbItemMul=1;}}}
   const stopSpawn=b.boss2Mode==='special'||(b.boss2Mode==='orb'&&orbReaction(b)===2);
   if(!stopSpawn){b.purpleSpawnT=(b.purpleSpawnT||3)-dt;if(b.purpleSpawnT<=0){spawnBoss2Purple(b);b.purpleSpawnT=3;}}else b.purpleSpawnT=Math.min(b.purpleSpawnT||3,3);
@@ -96,7 +100,7 @@
  };
  updateBullets=function(dt){const before=pickups.filter(p=>p.type==='purple');baseUpdateBullets(dt);for(const p of before)if((p.hp||0)<=0&&!pickups.includes(p))boss2OnOrbDestroyed(null);};
  drawMage=function(m){if(!m||!m.alive)return;const alpha=clamp(m.boss2FadeAlpha??1,0,1);if(alpha>=.999){baseDrawMage(m);return;}ctx.save();ctx.globalAlpha=alpha;ctx.translate(m.x,m.y);ctx.rotate(m.aim);ctx.shadowBlur=m.type==='boss'?40:24;ctx.shadowColor=m.color;ctx.strokeStyle=m.color;ctx.fillStyle='rgba(10,14,30,.95)';ctx.lineWidth=m.type==='boss'?4:3;const sides=m.type==='boss'?8:6;ctx.beginPath();for(let i=0;i<sides;i++){const a=i*Math.PI*2/sides,r=m.r*(i%2?.78:1),x=Math.cos(a)*r,y=Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(m.r*.45,-m.r*.25);ctx.lineTo(m.r*1.55,0);ctx.lineTo(m.r*.45,m.r*.25);ctx.closePath();ctx.fillStyle=m.color;ctx.fill();ctx.restore();};
- drawBullet=function(bullet){const b=b2();if(bullet&&bullet.playerShot&&b&&!bullet.boss2VisibleInAura&&Math.hypot(bullet.x-b.x,bullet.y-b.y)<=b.auraRadius)return;baseDrawBullet(bullet);};
+ drawBullet=function(bullet){const b=b2();const modeActive=!!(b&&(b.boss2Mode==='special'||b.boss2Mode==='orb'));if(bullet&&bullet.playerShot&&modeActive&&!bullet.boss2VisibleInAura&&Math.hypot(bullet.x-b.x,bullet.y-b.y)<=b.auraRadius)return;baseDrawBullet(bullet);};
  plainMage=function(m){const o=basePlainMage(m);if(!o)return o;for(const k of ['boss2FadeAlpha','boss2SpecialMap','boss2OrbMap','boss2Mode','boss2ModeT','boss2OrbItem','boss2OrbItemMul','boss2RapidT'])o[k]=m[k];return o;};
  netSendSnapshot=function(force=false){if(net.role!=='host'||!net.connected)return;if(!force&&net.snapT<.05)return;net.snapT=0;wsSend({type:'snapshot',mode:multiplayer.mode,state,time,stage:run.stage,credits:run.credits,peerCredits:peerProfile.credits,p1:plainMage(player),p2:plainMage(remotePlayer),enemies:enemies.map(plainMage),bullets:bullets.map(b=>({x:b.x,y:b.y,vx:b.vx,vy:b.vy,r:b.r,color:b.color,blast:b.blast,pulse:b.pulse,playerShot:b.playerShot,boss2VisibleInAura:b.boss2VisibleInAura})),pickups:pickups.map(p=>({type:p.type,x:p.x,y:p.y,r:p.r,spin:p.spin,hp:p.hp,maxHp:p.maxHp})),obstacles:obstacles.map(o=>({x:o.x,y:o.y,w:o.w,h:o.h,hp:o.hp,maxHp:o.maxHp,kind:o.kind,dead:o.dead})),battleEnded});};
 })();
