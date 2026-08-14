@@ -5,6 +5,7 @@
 
  function insideAura(p,b){return !!(p&&b&&Math.hypot(p.x-b.x,p.y-b.y)<=b.auraRadius);}
  function currentOrbReaction(b){return b?.boss2OrbMap?.[b.auraIndex]||0;}
+ function currentSpecialReaction(b){return b?.boss2SpecialMap?.[b.auraIndex]||0;}
  function killPlayerIfNeeded(p){
   if(p.health<=0&&p.alive){
    p.health=0;p.alive=false;
@@ -12,7 +13,7 @@
   }
  }
  function slowPurpleSpawnActive(b){
-  return !!(b&&(b.boss2Mode==='special'||(b.boss2Mode==='orb'&&currentOrbReaction(b)===2)));
+  return !!(b&&((b.boss2Mode==='special'&&currentSpecialReaction(b)!==3)||(b.boss2Mode==='orb'&&currentOrbReaction(b)===2)));
  }
 
  function teleportOutsideAura(p,b){
