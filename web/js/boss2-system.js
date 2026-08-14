@@ -102,7 +102,7 @@
    }
   }
 
-  const stopSpawn=(b.boss2Mode==='special'&&specialReaction(b)===3)||(b.boss2Mode==='orb'&&orbReaction(b)===2);
+  const stopSpawn=b.boss2Mode==='special'||(b.boss2Mode==='orb'&&orbReaction(b)===2);
   if(!stopSpawn){
    b.purpleSpawnT=(b.purpleSpawnT||3)-dt;
    if(b.purpleSpawnT<=0){spawnBoss2Purple(b);b.purpleSpawnT=3;}
