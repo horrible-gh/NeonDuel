@@ -3,7 +3,6 @@
  const baseUpdateBoss2=updateBoss2;
  const baseDamageMage=damageMage;
 
- function boss2Now(){return enemies.find(e=>e.alive&&e.boss2);}
  function insideAura(p,b){return !!(p&&b&&Math.hypot(p.x-b.x,p.y-b.y)<=b.auraRadius);}
  function currentOrbReaction(b){return b?.boss2OrbMap?.[b.auraIndex]||0;}
 
@@ -55,7 +54,7 @@
 
  damageMage=function(m,damage,bullet){
   if(m&&m.boss2&&m.boss2Mode==='special'&&bullet&&(bullet.owner===player||bullet.owner===remotePlayer)){
-   if(!m.alive||m.inv>0)return false;
+   if(!m.alive)return false;
    if((m.invisibleEnemyT||0)>0)m.invisibleEnemyT=0;
    if(bullet.owner&&(bullet.owner.invisibleEnemyT||0)>0)bullet.owner.invisibleEnemyT=0;
    m.health-=777;
