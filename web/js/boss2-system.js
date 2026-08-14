@@ -5,6 +5,7 @@
  const baseFire=fire;
  const baseDamageMage=damageMage;
  const baseUpdateBullets=updateBullets;
+ const baseUpdatePickups=updatePickups;
  const baseDrawMage=drawMage;
  const baseDrawBullet=drawBullet;
  const basePlainMage=plainMage;
@@ -59,7 +60,7 @@
   if(!b||!b.alive)return;
   const a=Math.random()*Math.PI*2,sp=rand(55,90);
   const px=x??(b.x+Math.cos(a)*(b.r+18)),py=y??(b.y+Math.sin(a)*(b.r+18));
-  pickups.push({type:'purple',x:px,y:py,r:19,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,spin:0,hp:125,maxHp:125});
+  pickups.push({type:'purple',x:px,y:py,r:19,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,spin:0,hp:100,maxHp:100});
   burst(px,py,'#bd6bff',18,120);
  };
 
@@ -101,7 +102,7 @@
    }
   }
 
-  const stopSpawn=b.boss2Mode==='special'&&specialReaction(b)===3;
+  const stopSpawn=(b.boss2Mode==='special'&&specialReaction(b)===3)||(b.boss2Mode==='orb'&&orbReaction(b)===2);
   if(!stopSpawn){
    b.purpleSpawnT=(b.purpleSpawnT||3)-dt;
    if(b.purpleSpawnT<=0){spawnBoss2Purple(b);b.purpleSpawnT=3;}
@@ -166,6 +167,22 @@
   const result=baseDamageMage(m,dealt*1000,bullet);
   src.eliteMult=oldElite;bullet.boss2AuraShot=oldAuraShot;bullet.boss2Aura4Normal=oldAura4;
   return result;
+ };
+
+ updatePickups=function(dt){
+  if(run.stage===20){
+   for(let i=pickups.length-1;i>=0;i--){
+    const p=pickups[i];if(p.type!=='purple')continue;
+    for(const target of livingPlayers()){
+     if(Math.hypot(p.x-target.x,p.y-target.y)<p.r+target.r){
+      target.health=Math.max(0,target.health-10);
+      burst(target.x,target.y,'#bd6bff',22,150);ring(target.x,target.y,'#bd6bff',72);shake+=4;sfx('debuff');
+      pickups.splice(i,1);killPlayerIfNeeded(target);break;
+     }
+    }
+   }
+  }
+  baseUpdatePickups(dt);
  };
 
  updateBullets=function(dt){
