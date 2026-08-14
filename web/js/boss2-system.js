@@ -8,6 +8,8 @@
  const baseDrawMage=drawMage;
  const baseDrawBullet=drawBullet;
  const basePlainMage=plainMage;
+ const baseApplyEffect=applyEffect;
+ const baseApplyRandomDebuff=applyRandomDebuff;
 
  function b2(){return enemies.find(e=>e.alive&&e.boss2);}
  function shuffled4(){const a=[1,2,3,4];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -18,6 +20,11 @@
  function rollOrbItem(b){b.boss2OrbItem=1+Math.floor(Math.random()*4);b.boss2OrbItemMul=orbItemMul(b.boss2OrbItem);}
  function killPlayerIfNeeded(p){if(p.health<=0&&p.alive){p.health=0;p.alive=false;if(livingPlayers().length===0)endBattle(false);}}
  function reflectToPlayer(p,amount){p.health=Math.max(0,p.health-amount);killPlayerIfNeeded(p);}
+ function addBoss2ItemHpPenalty(m,before){
+  if(run.stage!==20||!m||!m.alive)return;
+  const lost=before-m.health;
+  if(Math.abs(lost-10)<.001){m.health=Math.max(0,m.health-5);killPlayerIfNeeded(m);}
+ }
 
  function initBoss2(b){
   b.auraEffect=0; // disables the retired fixed-color gimmicks in legacy code
@@ -34,6 +41,19 @@
   const m=baseSpawnEnemy(type,index,total);
   if(m&&m.boss2)initBoss2(m);
   return m;
+ };
+
+ applyEffect=function(m,isBuff){
+  const before=m?.health??0;
+  const result=baseApplyEffect(m,isBuff);
+  if(!isBuff)addBoss2ItemHpPenalty(m,before);
+  return result;
+ };
+ applyRandomDebuff=function(m,allowDeferred=true){
+  const before=m?.health??0;
+  const result=baseApplyRandomDebuff(m,allowDeferred);
+  addBoss2ItemHpPenalty(m,before);
+  return result;
  };
 
  spawnBoss2Purple=function(b,x=null,y=null){
@@ -115,12 +135,18 @@
     bullet.color='#d8f5ff';bullet.boss2VisibleInAura=true;bullet.boss2Special3=true;
    }else bullet.boss2VisibleInAura=false;
   }else if(m.boss2){
-   // Stage 20 is normally 50% of the old firing rate; orb-reaction 3 raises it to 200%.
-   m.shotCd*=((m.boss2RapidT||0)>0?.5:2);
+   // Stage 20 is normally 75% of the old firing rate; orb-reaction 3 raises it to 200%.
+   m.shotCd*=((m.boss2RapidT||0)>0?.5:(4/3));
   }
  };
 
  damageMage=function(m,damage,bullet){
+  if((m===player||m===remotePlayer)&&bullet&&bullet.owner&&bullet.owner.boss2){
+   const before=m.health;
+   const result=baseDamageMage(m,damage,bullet);
+   if(result&&bullet.blast&&m.alive&&before-m.health>0){m.health=Math.max(0,m.health-5);killPlayerIfNeeded(m);}
+   return result;
+  }
   if(!(m&&m.boss2&&bullet&&(bullet.owner===player||bullet.owner===remotePlayer)))return baseDamageMage(m,damage,bullet);
   const src=bullet.owner,inside=insideAura(src,m),mode=m.boss2Mode;
   const special=inside&&mode==='special'?specialReaction(m):0;
@@ -182,6 +208,6 @@
 
  netSendSnapshot=function(force=false){
   if(net.role!=='host'||!net.connected)return;if(!force&&net.snapT<.05)return;net.snapT=0;
-  wsSend({type:'snapshot',mode:multiplayer.mode,state,time,stage:run.stage,credits:run.credits,peerCredits:peerProfile.credits,p1:plainMage(player),p2:plainMage(remotePlayer),enemies:enemies.map(plainMage),bullets:bullets.map(b=>({x:b.x,y:b.y,vx:b.vx,vy:b.vy,r:b.r,color:b.color,blast:b.blast,pulse:b.pulse,playerShot:b.playerShot,boss2VisibleInAura:b.boss2VisibleInAura})),pickups:pickups.map(p=>({type:p.type,x:p.x,y:p.y,r:p.r,spin:p.spin,hp:p.hp,maxHp:p.maxHp})),obstacles:obstacles.map(o=>({x:o.x,y:o.y,w:o.w,h:o.h,hp:o.hp,maxHp:o.maxHp,kind:o.kind,dead:o.dead})),battleEnded});
+  wsSend({type:'snapshot',mode:multiplayer.mode,state,time,stage:run.stage,credits:run.credits,peerCredits:peerProfile.credits,p1:plainMage(player),p2:plainMage(remotePlayer),enemies:enemies.map(plainMage),bullets:bullets.map(b=>({x:b.x,y:b.y,vx:b.vx,vy:b.vy,r:b.r,color:b.color,blast:b.blast,pulse:b.pulse,playerShot:b.playerShot,boss2VisibleInAura:b.boss2VisibleInAura})),pickups:pickups.map(p=>({type:p.type,x:p.x,y:p.y,r:p.r,spin:p.spin,hp:p.hp,maxHp:p.maxHp})),obstacles:obstacles.map(o=>({x:o.x,y:o.y,w:o.w,h:o.hp,maxHp:o.maxHp,kind:o.kind,dead:o.dead})),battleEnded});
  };
 })();
