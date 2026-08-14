@@ -208,6 +208,6 @@
 
  netSendSnapshot=function(force=false){
   if(net.role!=='host'||!net.connected)return;if(!force&&net.snapT<.05)return;net.snapT=0;
-  wsSend({type:'snapshot',mode:multiplayer.mode,state,time,stage:run.stage,credits:run.credits,peerCredits:peerProfile.credits,p1:plainMage(player),p2:plainMage(remotePlayer),enemies:enemies.map(plainMage),bullets:bullets.map(b=>({x:b.x,y:b.y,vx:b.vx,vy:b.vy,r:b.r,color:b.color,blast:b.blast,pulse:b.pulse,playerShot:b.playerShot,boss2VisibleInAura:b.boss2VisibleInAura})),pickups:pickups.map(p=>({type:p.type,x:p.x,y:p.y,r:p.r,spin:p.spin,hp:p.hp,maxHp:p.maxHp})),obstacles:obstacles.map(o=>({x:o.x,y:o.y,w:o.w,h:o.hp,maxHp:o.maxHp,kind:o.kind,dead:o.dead})),battleEnded});
+  wsSend({type:'snapshot',mode:multiplayer.mode,state,time,stage:run.stage,credits:run.credits,peerCredits:peerProfile.credits,p1:plainMage(player),p2:plainMage(remotePlayer),enemies:enemies.map(plainMage),bullets:bullets.map(b=>({x:b.x,y:b.y,vx:b.vx,vy:b.vy,r:b.r,color:b.color,blast:b.blast,pulse:b.pulse,playerShot:b.playerShot,boss2VisibleInAura:b.boss2VisibleInAura})),pickups:pickups.map(p=>({type:p.type,x:p.x,y:p.y,r:p.r,spin:p.spin,hp:p.hp,maxHp:p.maxHp})),obstacles:obstacles.map(o=>({x:o.x,y:o.y,w:o.w,h:o.h,hp:o.hp,maxHp:o.maxHp,kind:o.kind,dead:o.dead})),battleEnded});
  };
 })();
