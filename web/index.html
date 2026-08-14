@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Neon Duel // Growth Arena</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="peerBadge"></div>
+<div id="netLobby">
+  <div class="netCard">
+    <div class="netTitle">NEON DUEL // LINK</div>
+    <div class="netSub">SOLO 또는 2인 HOST / GUEST 연결</div>
+    <div class="netRow"><button class="netBtn" id="soloBtn">SOLO</button><button class="netBtn" id="hostCoopBtn">HOST // CO-OP</button><button class="netBtn" id="hostVsBtn">HOST // VS</button></div>
+    <div class="netRow"><input class="netInput" id="joinAddr" value="127.0.0.1:8787" placeholder="HOST IP:PORT"><button class="netBtn" id="joinBtn">JOIN</button></div>
+    <div class="netStatus" id="netStatus">포트포워딩: TCP 8787 → HOST PC</div>
+    <div class="netHint">HOST는 방식을 선택한 뒤 대기합니다. GUEST는 HOST의 공인 IP:8787을 입력합니다. 협력전: 일반 적 ×2 / HP ×1.1, 중간·대형보스 HP ×2.25. VS는 적 없이 두 기체가 대전합니다.</div>
+  </div>
+</div>
+<div id="overlay">
+  <div class="panel" id="left"><div class="name">PLAYER // MK-II</div><div class="bar"><div id="pfill" class="fill"></div></div><div class="sub" id="pstat"></div></div>
+  <div class="panel" id="right"><div class="name" id="enemyName">NOVA // SQUAD</div><div class="bar"><div id="afill" class="fill"></div></div><div class="sub" id="astat"></div></div>
+  <div id="stagePanel"></div>
+  <div id="centerMsg"></div>
+  <div id="help">WASD 이동 · 마우스 조준 · 좌클릭 연사 · Space 대시 · 폭발탄은 업그레이드 후 10발마다 자동 발사</div>
+</div>
+<div id="resultBanner"><div class="resultTitle" id="resultTitle"></div><div class="resultSub" id="resultSub"></div></div>
+<div id="shop">
+  <div class="shopWrap">
+    <div class="shopHead"><div><div class="shopTitle">NEON ARMORY</div><div class="sub">전투 전에 기체를 강화하십시오.</div></div><div class="credits" id="creditText">0 CR</div></div>
+    <div class="col" id="attackCol"><h3>OFFENSE</h3></div>
+    <div class="col shipBox"><div class="shipCore"></div><div class="shipLabel" id="shipSummary"></div></div>
+    <div class="col" id="defenseCol"><h3>DEFENSE / MOBILITY</h3></div>
+    <div class="shopFoot"><div><div class="stagePick"><span>STAGE</span><select id="stageSelect"></select><span id="stageLockInfo"></span></div><div class="nextInfo" id="nextInfo"></div><div class="readyWait" id="readyWait"></div></div><button class="startBtn" id="startBtn">READY</button></div>
+  </div>
+</div>
+<script src="/js/core.js"></script>
+<script src="/js/gameplay.js"></script>
+<script src="/js/network.js"></script>
+<script src="/js/ai.js"></script>
+<script src="/js/boss.js"></script>
+<script src="/js/pickups-damage.js"></script>
+<script src="/js/render.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
