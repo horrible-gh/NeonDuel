@@ -1,0 +1,5 @@
+neon_duel.exe
+*.exe
+*.zip
+_check.js
+dist/
