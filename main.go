@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -19,7 +20,7 @@ import (
 	"time"
 )
 
-//go:embed game.html
+//go:embed web/*
 var assets embed.FS
 
 type wsClient struct {
@@ -226,22 +227,6 @@ func readFrame(r *bufio.Reader) (byte, []byte, error) {
 	return op, payload, nil
 }
 
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" && r.URL.Path != "/game.html" {
-		http.NotFound(w, r)
-		return
-	}
-	b, err := assets.ReadFile("game.html")
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	b = []byte(strings.ReplaceAll(string(b), "dealt=b.blast?damage:m.maxHealth*.01;", "dealt=b.blast?damage:1;"))
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store")
-	_, _ = w.Write(b)
-}
-
 func openBrowser(url string) {
 	time.Sleep(450 * time.Millisecond)
 	switch runtime.GOOS {
@@ -258,9 +243,26 @@ func main() {
 	port := flag.String("port", "8787", "listen port")
 	noBrowser := flag.Bool("no-browser", false, "do not open browser automatically")
 	flag.Parse()
-	addr := ":" + *port
-	http.HandleFunc("/", rootHandler)
+
+	webFS, err := fs.Sub(assets, "web")
+	if err != nil {
+		log.Fatal(err)
+	}
+	static := http.FileServer(http.FS(webFS))
+
 	http.HandleFunc("/ws", wsHandler)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		if r.URL.Path == "/game.html" {
+			clone := r.Clone(r.Context())
+			clone.URL.Path = "/"
+			static.ServeHTTP(w, clone)
+			return
+		}
+		static.ServeHTTP(w, r)
+	})
+
+	addr := ":" + *port
 	url := "http://127.0.0.1:" + *port + "/"
 	log.Printf("Neon Duel server: %s", url)
 	log.Printf("Port forwarding for internet HOST: TCP %s -> this PC:%s", *port, *port)
