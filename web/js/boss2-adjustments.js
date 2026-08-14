@@ -5,6 +5,12 @@
 
  function insideAura(p,b){return !!(p&&b&&Math.hypot(p.x-b.x,p.y-b.y)<=b.auraRadius);}
  function currentOrbReaction(b){return b?.boss2OrbMap?.[b.auraIndex]||0;}
+ function killPlayerIfNeeded(p){
+  if(p.health<=0&&p.alive){
+   p.health=0;p.alive=false;
+   if(livingPlayers().length===0)endBattle(false);
+  }
+ }
 
  function teleportOutsideAura(p,b){
   let pos=null;
@@ -23,6 +29,8 @@
    pos=candidates.sort((a,c)=>Math.hypot(c.x-b.x,c.y-b.y)-Math.hypot(a.x-b.x,a.y-b.y))[0];
   }
   p.x=pos.x;p.y=pos.y;p.vx=0;p.vy=0;
+  p.health=Math.max(0,p.health-5);
+  killPlayerIfNeeded(p);
  }
 
  updateBoss2=function(b,dt){
@@ -58,6 +66,9 @@
    if((m.invisibleEnemyT||0)>0)m.invisibleEnemyT=0;
    if(bullet.owner&&(bullet.owner.invisibleEnemyT||0)>0)bullet.owner.invisibleEnemyT=0;
    m.health-=777;
+   if(bullet.boss2Special3&&bullet.owner){
+    bullet.owner.health=Math.min(bullet.owner.maxHealth,bullet.owner.health+2);
+   }
    return finishBoss2Hit(m,bullet);
   }
   return baseDamageMage(m,damage,bullet);
