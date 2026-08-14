@@ -54,7 +54,7 @@ function applyRandomDebuff(m,allowDeferred=true){if(m!==player&&m!==remotePlayer
  }else if(type==='fire'){
    m.effect='fireDebuff';m.effectMul=rand(.10,.50);m.effectT=rand(2,5);
  }else if(type==='hp'){
-   m.health=Math.max(0,m.health-m.maxHealth*.10);
+   m.health=Math.max(0,m.health-(run.stage===20?10:m.maxHealth*.10));
    burst(m.x,m.y,'#ff405f',18,130);ring(m.x,m.y,'#ff405f',58);
    if(m.health<=0){m.alive=false;endBattle(false);}
  }else if(type==='attack'){
@@ -97,7 +97,7 @@ function applyEffect(m,isBuff){if(!isBuff&&m!==player&&m!==remotePlayer)return;
    if(type==='speed'){m.effect='speedDebuff';m.effectMul=rand(.10,.50);m.effectT=rand(2,4);}
    else if(type==='fire'){m.effect='fireDebuff';m.effectMul=rand(.10,.50);m.effectT=rand(2,5);}
    else if(type==='hp'){
-     m.health=Math.max(0,m.health-m.maxHealth*.10);
+     m.health=Math.max(0,m.health-(run.stage===20?10:m.maxHealth*.10));
      if(m.health<=0){m.alive=false;endBattle(false);}
    }
    else if(type==='attack'){m.attackDebuffMul=.50;m.attackDebuffT=rand(3,5);}
@@ -140,7 +140,7 @@ function damageMage(m,damage,b){
  let dealt;
  if((m===player||m===remotePlayer)&&b&&b.owner&&b.owner.boss2){
    m.shield=0;m.tempShield=0;m.tempShieldT=0;m.shieldRechargeDelay=3;
-   dealt=b.blast?damage:1;
+   dealt=b.blast?10:1;
  }else if(m.boss2&&b&&(b.owner===player||b.owner===remotePlayer)){
    if(b.boss2AuraShot){
      dealt=777;
