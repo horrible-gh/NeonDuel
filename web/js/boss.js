@@ -109,6 +109,32 @@ function shuffleBoss2AuraMap(previous=null){
  return a;
 }
 function spawnBoss2Purple(m){const a=Math.random()*Math.PI*2,sp=rand(55,90);pickups.push({type:'purple',x:m.x+Math.cos(a)*(m.r+18),y:m.y+Math.sin(a)*(m.r+18),r:19,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,spin:0,hp:125,maxHp:125});burst(m.x,m.y,'#bd6bff',18,120);}
+function boss2WarpOutsideAura(m,p){
+ const ab=arenaBounds(),margin=p.r+8;
+ for(let tries=0;tries<100;tries++){
+   const x=rand(ab.left+arena.pad+margin,ab.right-arena.pad-margin);
+   const y=rand(ab.top+arena.pad+margin,ab.bottom-arena.pad-margin);
+   if(Math.hypot(x-m.x,y-m.y)<=m.auraRadius+p.r+24)continue;
+   if(obstacles.some(o=>!o.dead&&circleRect(x,y,p.r+8,o)))continue;
+   p.x=x;p.y=y;p.vx=0;p.vy=0;
+   burst(x,y,'#9bc7ff',32,180);ring(x,y,'#9bc7ff',92);
+   return true;
+ }
+ return false;
+}
+function boss2StartRecover(p){
+ const alpha=clamp(p.boss2WarpAlpha??1,0,1);
+ if(alpha>=.999){p.boss2WarpAlpha=1;p.boss2WarpRecoverT=0;return;}
+ p.boss2WarpRecoverFrom=alpha;
+ p.boss2WarpRecoverT=1.5;
+}
+function boss2Recover(p,dt){
+ if((p.boss2WarpRecoverT||0)<=0){p.boss2WarpAlpha=1;return;}
+ p.boss2WarpRecoverT=Math.max(0,p.boss2WarpRecoverT-dt);
+ const t=1-p.boss2WarpRecoverT/1.5;
+ p.boss2WarpAlpha=lerp(p.boss2WarpRecoverFrom??0,1,clamp(t,0,1));
+ if(p.boss2WarpRecoverT<=0){p.boss2WarpAlpha=1;p.boss2WarpRecoverFrom=1;}
+}
 function updateBoss2(m,dt){
  m.auraT-=dt;
  if(m.auraT<=0){
@@ -134,18 +160,28 @@ function updateBoss2(m,dt){
        if(p.health<=0&&p.alive){p.alive=false;if(livingPlayers().length===0)endBattle(false);}
      }
    }
-   if(m.auraEffect===2&&inside.length){
-     m.mouseSnapT-=dt;
-     if(m.mouseSnapT<=0){
-       for(const p of inside){
-         p.forcedAimT=.45;p.forcedAimX=m.x;p.forcedAimY=m.y;
-         if(p===player){mouse.x=m.x;mouse.y=m.y;}
+   if(m.auraEffect===2){
+     for(const p of living){
+       const isInside=Math.hypot(p.x-m.x,p.y-m.y)<=m.auraRadius;
+       if(isInside){
+         p.boss2WarpRecoverT=0;
+         p.boss2WarpT=(p.boss2WarpT||0)+dt;
+         p.boss2WarpAlpha=clamp(1-Math.min(p.boss2WarpT,1.5)/1.5,0,1);
+         if(p.boss2WarpT>=3){
+           if(boss2WarpOutsideAura(m,p)){
+             p.health=Math.max(0,p.health-3);
+             burst(p.x,p.y,'#9bc7ff',22,150);ring(p.x,p.y,'#9bc7ff',72);
+             p.boss2WarpT=0;p.boss2WarpAlpha=0;p.boss2WarpRecoverFrom=0;p.boss2WarpRecoverT=1.5;
+             if(p.health<=0&&p.alive){p.alive=false;if(livingPlayers().length===0)endBattle(false);}
+           }else{
+             p.boss2WarpT=2.85;
+           }
+         }
+       }else{
+         if((p.boss2WarpT||0)>0){p.boss2WarpT=0;boss2StartRecover(p);}
+         boss2Recover(p,dt);
        }
-       burst(m.x,m.y,'#9bc7ff',14,90);ring(m.x,m.y,'#9bc7ff',72);
-       m.mouseSnapT=2;
      }
-   }else if(m.auraEffect===2){
-     m.mouseSnapT=2;
    }
  }else if(m.auraEffect===3){
    for(const p of outside){
@@ -172,6 +208,12 @@ function updateBoss2(m,dt){
        p.health=Math.max(0,p.health-1*dt);
        if(p.health<=0&&p.alive){p.alive=false;if(livingPlayers().length===0)endBattle(false);}
      }
+   }
+ }
+ if(m.auraEffect!==2){
+   for(const p of living){
+     if((p.boss2WarpT||0)>0){p.boss2WarpT=0;boss2StartRecover(p);}
+     boss2Recover(p,dt);
    }
  }
 }
