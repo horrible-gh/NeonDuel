@@ -31,7 +31,6 @@
   b.auraIndex=0;b.auraT=10;b.auraPulse=0;b.auraPulseT=.9;
   b.boss2SpecialMap=shuffled4();
   b.boss2OrbMap=shuffled4();
-  b.boss2OrbSpawnColors=shuffled4().slice(0,2).map(v=>v-1);
   b.boss2Mode=null;b.boss2ModeT=0;
   b.boss2OrbItem=0;b.boss2OrbItemMul=1;
   b.boss2RapidT=0;b.purpleSpawnT=3;
@@ -85,7 +84,9 @@
   if(b.auraPulseT>0){b.auraPulseT=Math.max(0,b.auraPulseT-dt);b.auraPulse=1-b.auraPulseT/.9;}
   b.boss2RapidT=Math.max(0,(b.boss2RapidT||0)-dt);
 
+  const noPlayerFade=b.boss2Mode==='orb'&&orbReaction(b)===2;
   for(const p of livingPlayers()){
+   if(noPlayerFade){p.boss2FadeAlpha=1;continue;}
    p.boss2FadeAlpha=clamp((p.boss2FadeAlpha??1)+(insideAura(p,b)?-dt:dt),0,1);
   }
 
@@ -101,8 +102,7 @@
   }
 
   const stopSpawn=b.boss2Mode==='special'&&specialReaction(b)===3;
-  const spawnColor=(b.boss2OrbSpawnColors||[]).includes(b.auraIndex);
-  if(spawnColor&&!stopSpawn){
+  if(!stopSpawn){
    b.purpleSpawnT=(b.purpleSpawnT||3)-dt;
    if(b.purpleSpawnT<=0){spawnBoss2Purple(b);b.purpleSpawnT=3;}
   }else b.purpleSpawnT=Math.min(b.purpleSpawnT||3,3);
@@ -141,12 +141,6 @@
  };
 
  damageMage=function(m,damage,bullet){
-  if((m===player||m===remotePlayer)&&bullet&&bullet.owner&&bullet.owner.boss2){
-   const before=m.health;
-   const result=baseDamageMage(m,damage,bullet);
-   if(result&&bullet.blast&&m.alive&&before-m.health>0){m.health=Math.max(0,m.health-5);killPlayerIfNeeded(m);}
-   return result;
-  }
   if(!(m&&m.boss2&&bullet&&(bullet.owner===player||bullet.owner===remotePlayer)))return baseDamageMage(m,damage,bullet);
   const src=bullet.owner,inside=insideAura(src,m),mode=m.boss2Mode;
   const special=inside&&mode==='special'?specialReaction(m):0;
@@ -202,7 +196,7 @@
 
  plainMage=function(m){
   const o=basePlainMage(m);if(!o)return o;
-  for(const k of ['boss2FadeAlpha','boss2SpecialMap','boss2OrbMap','boss2OrbSpawnColors','boss2Mode','boss2ModeT','boss2OrbItem','boss2OrbItemMul','boss2RapidT'])o[k]=m[k];
+  for(const k of ['boss2FadeAlpha','boss2SpecialMap','boss2OrbMap','boss2Mode','boss2ModeT','boss2OrbItem','boss2OrbItemMul','boss2RapidT'])o[k]=m[k];
   return o;
  };
 
