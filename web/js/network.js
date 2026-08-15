@@ -1,16 +1,35 @@
+function updatePingBadge(){
+ const b=document.getElementById('pingBadge');if(!b)return;
+ if(!multiplayer.enabled||!net.connected){b.style.display='none';return;}
+ b.style.display='block';
+ b.textContent=`PING ${Number.isFinite(net.pingMs)?Math.round(net.pingMs)+'ms':'--ms'}`;
+}
+function stopNetPing(){
+ if(net.pingTimer){clearInterval(net.pingTimer);net.pingTimer=null;}
+ net.pingMs=null;updatePingBadge();
+}
+function sendNetPing(){
+ if(!net.connected||!net.ws||net.ws.readyState!==WebSocket.OPEN||!net.peer)return;
+ wsSend({type:'ping',t:Date.now()});
+}
+function startNetPing(){
+ stopNetPing();updatePingBadge();sendNetPing();net.pingTimer=setInterval(sendNetPing,1000);
+}
 function connectNet(role,mode,addr){
  net.role=role;multiplayer.enabled=role!=='solo';multiplayer.mode=mode||'coop';multiplayer.players=multiplayer.enabled?2:1;resetReadyState();
- if(role==='solo'){document.getElementById('netLobby').classList.add('hide');document.getElementById('peerBadge').style.display='none';showShop();return;}
+ if(role==='solo'){stopNetPing();document.getElementById('netLobby').classList.add('hide');document.getElementById('peerBadge').style.display='none';showShop();return;}
  const host=role==='host'?location.host:(addr||location.host);const proto=location.protocol==='https:'?'wss':'ws';
  const url=`${proto}://${host}/ws?role=${role}`;document.getElementById('netStatus').textContent=`CONNECTING ${url}`;
  try{net.ws=new WebSocket(url);}catch(e){document.getElementById('netStatus').textContent='연결 생성 실패: '+e;return;}
- net.ws.onopen=()=>{net.connected=true;document.getElementById('netLobby').classList.add('hide');const b=document.getElementById('peerBadge');b.style.display='block';b.textContent=role==='host'?`HOST // ${multiplayer.mode.toUpperCase()} // WAITING`:'GUEST // CONNECTED';showShop();wsSend({type:'mode',mode:multiplayer.mode,stage:run.stage,maxStage:run.maxStage});wsSend({type:'profile',profile:exportProfile()});};
- net.ws.onclose=()=>{net.connected=false;net.peer=false;document.getElementById('peerBadge').textContent='LINK LOST';if(role==='guest'){document.getElementById('netLobby').classList.remove('hide');document.getElementById('netStatus').textContent='HOST 연결이 종료되었습니다.';}};
+ net.ws.onopen=()=>{net.connected=true;document.getElementById('netLobby').classList.add('hide');const b=document.getElementById('peerBadge');b.style.display='block';b.textContent=role==='host'?`HOST // ${multiplayer.mode.toUpperCase()} // WAITING`:'GUEST // CONNECTED';startNetPing();showShop();wsSend({type:'mode',mode:multiplayer.mode,stage:run.stage,maxStage:run.maxStage});wsSend({type:'profile',profile:exportProfile()});};
+ net.ws.onclose=()=>{net.connected=false;net.peer=false;stopNetPing();document.getElementById('peerBadge').textContent='LINK LOST';if(role==='guest'){document.getElementById('netLobby').classList.remove('hide');document.getElementById('netStatus').textContent='HOST 연결이 종료되었습니다.';}};
  net.ws.onerror=()=>{document.getElementById('netStatus').textContent='WebSocket 연결 실패. IP/포트포워딩/방화벽을 확인하십시오.';};
  net.ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return;}handleNetMessage(m);};
 }
 function handleNetMessage(m){
- if(m.type==='peer'){net.peer=!!m.connected;if(!net.peer){net.peerReady=false;}const b=document.getElementById('peerBadge');b.style.display='block';b.textContent=net.role==='host'?`HOST // ${multiplayer.mode.toUpperCase()} // ${net.peer?'GUEST CONNECTED':'WAITING'}`:`GUEST // ${multiplayer.mode.toUpperCase()} // ${net.peer?'HOST CONNECTED':'WAITING'}`;if(net.role==='host'&&net.peer){wsSend({type:'mode',mode:multiplayer.mode,stage:run.stage,maxStage:run.maxStage});wsSend({type:'profile',profile:exportProfile()});}if(state==='shop')renderShop();return;}
+ if(m.type==='ping'){wsSend({type:'pong',t:m.t});return;}
+ if(m.type==='pong'){if(Number.isFinite(+m.t)){net.pingMs=Math.max(0,Date.now()-(+m.t));updatePingBadge();}return;}
+ if(m.type==='peer'){net.peer=!!m.connected;if(!net.peer){net.peerReady=false;net.pingMs=null;}else sendNetPing();updatePingBadge();const b=document.getElementById('peerBadge');b.style.display='block';b.textContent=net.role==='host'?`HOST // ${multiplayer.mode.toUpperCase()} // ${net.peer?'GUEST CONNECTED':'WAITING'}`:`GUEST // ${multiplayer.mode.toUpperCase()} // ${net.peer?'HOST CONNECTED':'WAITING'}`;if(net.role==='host'&&net.peer){wsSend({type:'mode',mode:multiplayer.mode,stage:run.stage,maxStage:run.maxStage});wsSend({type:'profile',profile:exportProfile()});}if(state==='shop')renderShop();return;}
  if(m.type==='mode'&&net.role==='guest'){multiplayer.mode=m.mode||'coop';if(m.stage)run.stage=Math.max(1,Math.floor(m.stage));renderShop();return;}
  if(m.type==='profile'){if(net.role==='host'&&m.profile){peerProfile={credits:+m.profile.credits||0,maxStage:Math.max(1,+m.profile.maxStage||1),up:{...emptyUp(),...(m.profile.up||{})}};}return;}
  if(m.type==='ready'){net.peerReady=!!m.ready;if(net.role==='host'&&m.profile)peerProfile={credits:+m.profile.credits||0,maxStage:Math.max(1,+m.profile.maxStage||1),up:{...emptyUp(),...(m.profile.up||{})}};if(state==='shop')renderShop();tryStartMultiplayer();return;}
