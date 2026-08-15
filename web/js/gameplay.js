@@ -30,7 +30,7 @@ function spawnEnemy(type,index,total){const s=enemyScale(run.stage),angle=(index
  if(type==='tank'){hpBase=170;damageMult=1.18;speedMult=.68;fireMult=.78;m.r=23;}
  if(type==='midboss'){hpBase=292.5;damageMult=1.22;speedMult=.9;fireMult=1.05;m.evasion=Math.min(.08,s.evasion+.015);}
  if(type==='boss'){hpBase=900;damageMult=1.3;speedMult=.72;fireMult=1.08;m.evasion=Math.min(.08,s.evasion+.02);}
- const coopHpMult=(multiplayer.enabled&&multiplayer.mode==='coop'&&multiplayer.players>=2)?(type==='midboss'?1.25:type==='boss'?2.25:1.10):1;
+ const coopHpMult=(multiplayer.enabled&&multiplayer.mode==='coop'&&multiplayer.players>=2)?(type==='midboss'?1.25:type==='boss'?2.00:1.00):1;
  m.maxHealth=hpBase*.6*s.hp*coopHpMult;m.health=m.maxHealth;
  if(type==='boss'&&run.stage===20){
    m.boss2=true;m.maxHealth=220000;m.health=220000;m.armor=.999;
